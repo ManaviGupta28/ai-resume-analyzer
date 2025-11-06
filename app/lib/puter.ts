@@ -99,6 +99,11 @@ interface PuterStore {
 const getPuter = (): typeof window.puter | null =>
 typeof window !== "undefined" && window.puter ? window.puter : null;
 
+if (typeof window !== "undefined") {
+    (window as any).getPuter = getPuter;
+}
+
+
 export const usePuterStore = create<PuterStore>((set, get) => {
     const setError = (msg: string) => {
         set({
@@ -350,7 +355,7 @@ export const usePuterStore = create<PuterStore>((set, get) => {
                     ],
                 },
             ],
-            { model: "gpt-4o" }
+            { model: "gpt-4o-mini" }
         ) as Promise<AIResponse | undefined>;
     };
 
