@@ -49,8 +49,9 @@ const Upload = () => {
 
         setStatusText('Analyzing...');
 
+        // Use the image for analysis as vision models read images more accurately
         const feedback = await ai.feedback(
-            uploadedFile.path,
+            uploadedImage.path,
             prepareInstructions({jobTitle, jobDescription})
         )
         if (!feedback) return setStatusText('Error: Failed to analyze resume');
@@ -59,7 +60,45 @@ const Upload = () => {
              ? feedback.message.content
              : feedback.message.content[0].text;
 
-        data.feedback = JSON.parse(feedbackText);
+        let parsedFeedback;
+        try {
+            // Try to parse the JSON response
+            parsedFeedback = JSON.parse(feedbackText);
+            
+            // Validate and ensure all tips have explanations
+            const validateTips = (tips: any[]) => {
+                if (!Array.isArray(tips)) return [];
+                return tips.map(tip => {
+                    // If explanation is missing or empty, use the tip as explanation
+                    if (!tip.explanation || !tip.explanation.trim()) {
+                        return {
+                            ...tip,
+                            explanation: tip.tip || 'No explanation provided.'
+                        };
+                    }
+                    return tip;
+                });
+            };
+
+            // Validate all tip sections
+            if (parsedFeedback.toneAndStyle?.tips) {
+                parsedFeedback.toneAndStyle.tips = validateTips(parsedFeedback.toneAndStyle.tips);
+            }
+            if (parsedFeedback.content?.tips) {
+                parsedFeedback.content.tips = validateTips(parsedFeedback.content.tips);
+            }
+            if (parsedFeedback.structure?.tips) {
+                parsedFeedback.structure.tips = validateTips(parsedFeedback.structure.tips);
+            }
+            if (parsedFeedback.skills?.tips) {
+                parsedFeedback.skills.tips = validateTips(parsedFeedback.skills.tips);
+            }
+        } catch (error) {
+            console.error('Error parsing feedback:', error);
+            return setStatusText('Error: Failed to parse analysis results');
+        }
+
+        data.feedback = parsedFeedback;
         await kv.set('resume:${uuid}',JSON.stringify(data));
         setStatusText('Analysis complete, redirecting...');
         console.log(data);

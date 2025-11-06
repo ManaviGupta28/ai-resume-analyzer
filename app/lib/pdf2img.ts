@@ -33,21 +33,47 @@ export async function convertPdfToImage(
 
         const arrayBuffer = await file.arrayBuffer();
         const pdf = await lib.getDocument({ data: arrayBuffer }).promise;
-        const page = await pdf.getPage(1);
+        const numPages = pdf.numPages;
 
-        const viewport = page.getViewport({ scale: 4 });
+        // Calculate total height needed for all pages
+        let totalHeight = 0;
+        let maxWidth = 0;
+        const pageViewports: any[] = [];
+
+        // First pass: calculate dimensions
+        for (let pageNum = 1; pageNum <= numPages; pageNum++) {
+            const page = await pdf.getPage(pageNum);
+            const viewport = page.getViewport({ scale: 4 });
+            pageViewports.push({ page, viewport });
+            totalHeight += viewport.height;
+            maxWidth = Math.max(maxWidth, viewport.width);
+        }
+
+        // Create a canvas large enough for all pages
         const canvas = document.createElement("canvas");
         const context = canvas.getContext("2d");
 
-        canvas.width = viewport.width;
-        canvas.height = viewport.height;
+        canvas.width = maxWidth;
+        canvas.height = totalHeight;
 
         if (context) {
             context.imageSmoothingEnabled = true;
             context.imageSmoothingQuality = "high";
+            context.fillStyle = "white";
+            context.fillRect(0, 0, canvas.width, canvas.height);
         }
 
-        await page.render({ canvasContext: context!, viewport }).promise;
+        // Second pass: render all pages
+        let currentY = 0;
+        for (const { page, viewport } of pageViewports) {
+            const renderContext = {
+                canvasContext: context!,
+                viewport: viewport,
+                transform: [1, 0, 0, 1, 0, currentY],
+            };
+            await page.render(renderContext).promise;
+            currentY += viewport.height;
+        }
 
         return new Promise((resolve) => {
             canvas.toBlob(

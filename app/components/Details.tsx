@@ -49,16 +49,23 @@ const CategoryContent: React.FC<{ tips: Tip[] }> = ({ tips }) => {
     return <p className="text-sm text-gray-600">No tips available.</p>;
   }
 
+  // Filter out tips with empty explanations and ensure both fields exist
+  const validTips = tips.filter(t => t.tip && t.tip.trim() && t.explanation && t.explanation.trim());
+
+  if (validTips.length === 0) {
+    return <p className="text-sm text-gray-600">No valid tips available. Please re-analyze your resume.</p>;
+  }
+
   return (
     <div className="flex flex-col gap-4">
       {/* Two-column tips grid */}
       <ul className="grid grid-cols-1 md:grid-cols-2 gap-3">
-        {tips.map((t, idx) => (
+        {validTips.map((t, idx) => (
           <li key={idx} className="flex items-start gap-2">
             <img
               src={t.type === 'good' ? '/icons/check.svg' : '/icons/warning.svg'}
               alt={t.type === 'good' ? 'Good' : 'Improve'}
-              className="h-4 w-4 mt-0.5"
+              className="h-4 w-4 mt-0.5 flex-shrink-0"
             />
             <span className="text-sm text-gray-800">{t.tip}</span>
           </li>
@@ -67,7 +74,7 @@ const CategoryContent: React.FC<{ tips: Tip[] }> = ({ tips }) => {
 
       {/* Explanations list */}
       <div className="space-y-2">
-        {tips.map((t, idx) => (
+        {validTips.map((t, idx) => (
           <div
             key={`exp-${idx}`}
             className={cn(
@@ -78,7 +85,7 @@ const CategoryContent: React.FC<{ tips: Tip[] }> = ({ tips }) => {
             )}
           >
             <p className="font-medium mb-1">{t.type === 'good' ? 'What you did well' : 'How to improve'}</p>
-            <p className="text-[13px] leading-relaxed">{t.explanation}</p>
+            <p className="text-[13px] leading-relaxed">{t.explanation || 'No explanation provided.'}</p>
           </div>
         ))}
       </div>
