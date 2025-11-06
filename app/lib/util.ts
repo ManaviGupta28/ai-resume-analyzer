@@ -1,9 +1,10 @@
-/**
- * Convert a size in bytes to a human-readable string using binary units (KB, MB, GB).
- * - Uses 1 KB = 1024 bytes.
- * - Shows up to 2 decimal places, trimmed (no trailing zeros).
- * - Caps at GB (for larger sizes, still shows in GB).
- */
+import {type ClassValue, clsx} from "clsx";
+import {twMerge} from "tailwind-merge";
+
+export function cn(...inputs: ClassValue[]) {
+    return twMerge(clsx(...inputs))
+}
+
 export function formatSize(bytes: number): string {
   if (!Number.isFinite(bytes) || bytes <= 0) return '0 B';
 
